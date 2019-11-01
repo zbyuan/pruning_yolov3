@@ -3,7 +3,7 @@
 ## 环境
 
 Python3.6, 
-Pytorch 1.0及以上，
+Pytorch 1.1及以上，
 numpy>1.16，
 tensorboard=1.13以上
 
