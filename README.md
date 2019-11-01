@@ -47,5 +47,5 @@ python  -c "from models import *; convert('cfg/yolov3.cfg', 'weights/yolov3.pt')
 Success: converted 'weights/yolov3.pt' to 'converted.weights'
 ```
 ## 参考
-https://github.com/zbyuan/YOLOv3-model-pruning
-https://github.com/ultralytics/yolov3
+-https://github.com/zbyuan/YOLOv3-model-pruning
+-https://github.com/ultralytics/yolov3
