@@ -3,8 +3,8 @@
 ## 环境
 
 Python3.6, 
-Pytorch 1.0及以上
-numpy>1.16
+Pytorch 1.0及以上，
+numpy>1.16，
 tensorboard=1.13以上
 
 YOLOv3 的训练参考[博客]（https://blog.csdn.net/qq_34795071/article/details/90769094）， 代码基于的 [PyTorch-YOLOv3](https://github.com/ultralytics/yolov3)
