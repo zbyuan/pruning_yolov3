@@ -34,14 +34,18 @@ tensorboard --logdir=runs
 ```
 ##  模型剪枝
 ```bash
-python prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --percent 0.5
+python prune.py --cfg cfg/yolov3.cfg --data data/my_data.data --weights weights/last.pt --percent 0.5
+```
+
+##  模型进行微调
+ ```bash
+ python train.py --cfg cfg/prune_0.5_yolov3_cfg.cfg --data data/VHR.data --weights weights/prune_0.5_last.pt --epochs 100 --batch-size 32
 ```
 ### convert cfg/pytorch model to darknet weights
 ```bash
-python3  -c "from models import *; convert('cfg/yolov3.cfg', 'weights/yolov3.pt')"
+python  -c "from models import *; convert('cfg/yolov3.cfg', 'weights/yolov3.pt')"
 Success: converted 'weights/yolov3.pt' to 'converted.weights'
 ```
-##  模型进行微调
- ```bash
-   python train.py --cfg cfg/prune_0.5_yolov3_cfg.cfg --data data/VHR.data --weights weights/prune_0.5_last.weights --epochs 100 --batch-size 32
-  ```
+## 参考
+https://github.com/zbyuan/YOLOv3-model-pruning
+https://github.com/ultralytics/yolov3
