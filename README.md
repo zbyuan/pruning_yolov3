@@ -13,7 +13,7 @@ YOLOv3 的训练参考[博客]（https://blog.csdn.net/qq_34795071/article/detai
 ## 正常训练（Baseline）
 
 ```bash
-python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weights --epochs 100 #后面的epochs自行更改 直接加载weights可以更好的收敛
+python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weights --epochs 100 --batch-size 32 #后面的epochs自行更改 直接加载weights可以更好的收敛
 ```
 
 ## 剪枝算法介绍
@@ -26,20 +26,22 @@ python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weigh
  ## 进行稀疏化训练
 
 ```bashpython 
-python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weights -sr --s 0.0001 --epochs 100 
+python train.py --cfg cfg/yolov3.cfg --data data/VHR.data --weights weights/last.pt --epochs 100 --batch-size 32 -sr --s 0.0001  #scale参数默认0.001，在数据分布广类别多的或者稀疏时掉点厉害的适当调小s
 ```
 ## 训练过程中模型可视化
 ```bash
 tensorboard --logdir=runs 
 ```
-## 通过U版本的训练后得到pt文件，转化为weights
-
+##  模型剪枝
+```bash
+python prune.py --cfg cfg/my_cfg.cfg --data data/my_data.data --weights weights/last.pt --percent 0.5
+```
 ### convert cfg/pytorch model to darknet weights
 ```bash
 python3  -c "from models import *; convert('cfg/yolov3.cfg', 'weights/yolov3.pt')"
 Success: converted 'weights/yolov3.pt' to 'converted.weights'
 ```
-##  将转化好的weights放到yolo_pruning中weights中进行模型剪枝，基于test_prune.py 文件进行剪枝，得到剪枝后的模型  得到剪枝后的cfg与weights 对剪枝后的模型进行微调
-   ```bash
-   python train.py --data data/VHR.data --cfg cfg/yolov3_0.85.cfg --weights/yolov3_0.85.weights --epochs 100
-   ```
+##  模型进行微调
+ ```bash
+   python train.py --cfg cfg/prune_0.5_yolov3_cfg.cfg --data data/VHR.data --weights weights/prune_0.5_last.weights --epochs 100 --batch-size 32
+  ```
