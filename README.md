@@ -39,7 +39,7 @@ python prune.py --cfg cfg/yolov3.cfg --data data/my_data.data --weights weights/
 
 ##  模型进行微调
  ```bash
- python train.py --cfg cfg/prune_0.5_yolov3_cfg.cfg --data data/VHR.data --weights weights/prune_0.5_last.pt --epochs 100 --batch-size 32
+ python train.py --cfg cfg/prune_0.5_yolov3_cfg.cfg --data data/VHR.data --weights weights/prune_0.5_last.weights --epochs 100 --batch-size 32
 ```
 ## convert cfg/pytorch model to darknet weights
 ```bash
