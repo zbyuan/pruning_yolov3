@@ -34,7 +34,7 @@ tensorboard --logdir=runs
 ```
 ##  模型剪枝
 ```bash
-python prune.py --cfg cfg/yolov3.cfg --data data/my_data.data --weights weights/last.pt --percent 0.5
+python prune.py --cfg cfg/yolov3.cfg --data data/VHR.data --weights weights/last.pt --percent 0.5
 ```
 
 ##  模型进行微调
