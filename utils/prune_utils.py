@@ -39,6 +39,44 @@ def parse_module_defs(module_defs):
     return CBL_idx, Conv_idx, prune_idx
 
 
+def parse_module_defs2(module_defs):
+
+    CBL_idx = []
+    Conv_idx = []
+    shortcut_idx=dict()
+    shortcut_all=set()
+    for i, module_def in enumerate(module_defs):
+        if module_def['type'] == 'convolutional':
+            if module_def['batch_normalize'] == '1':
+                CBL_idx.append(i)
+            else:
+                Conv_idx.append(i)
+
+    ignore_idx = set()
+    for i, module_def in enumerate(module_defs):
+        if module_def['type'] == 'shortcut':
+            identity_idx = (i + int(module_def['from']))
+            if module_defs[identity_idx]['type'] == 'convolutional':
+                
+                #ignore_idx.add(identity_idx)
+                shortcut_idx[i-1]=identity_idx
+                shortcut_all.add(identity_idx)
+            elif module_defs[identity_idx]['type'] == 'shortcut':
+                
+                #ignore_idx.add(identity_idx - 1)
+                shortcut_idx[i-1]=identity_idx-1
+                shortcut_all.add(identity_idx-1)
+            shortcut_all.add(i-1)
+    #上采样层前的卷积层不裁剪
+    ignore_idx.add(84)
+    ignore_idx.add(96)
+
+    prune_idx = [idx for idx in CBL_idx if idx not in ignore_idx]
+
+    return CBL_idx, Conv_idx, prune_idx,shortcut_idx,shortcut_all
+
+
+    
 def gather_bn_weights(module_list, prune_idx):
 
     size_list = [module_list[idx][1].weight.data.shape[0] for idx in prune_idx]
@@ -188,3 +226,67 @@ def obtain_bn_mask(bn_module, thre):
     mask = bn_module.weight.data.abs().ge(thre).float()
 
     return mask
+
+
+
+def update_activation(i, pruned_model, activation, CBL_idx):
+    next_idx = i + 1
+    if pruned_model.module_defs[next_idx]['type'] == 'convolutional':
+        next_conv = pruned_model.module_list[next_idx][0]
+        conv_sum = next_conv.weight.data.sum(dim=(2, 3))
+        offset = conv_sum.matmul(activation.reshape(-1, 1)).reshape(-1)
+        if next_idx in CBL_idx:
+            next_bn = pruned_model.module_list[next_idx][1]
+            next_bn.running_mean.data.sub_(offset)
+        else:
+            next_conv.bias.data.add_(offset)
+
+
+
+def prune_model_keep_size2(model, prune_idx, CBL_idx, CBLidx2mask):
+
+    pruned_model = deepcopy(model)
+    activations = []
+    for i, model_def in enumerate(model.module_defs):
+
+        if model_def['type'] == 'convolutional':
+            activation = None
+            if i in prune_idx:
+                mask = torch.from_numpy(CBLidx2mask[i]).cuda()
+                bn_module = pruned_model.module_list[i][1]
+                bn_module.weight.data.mul_(mask)
+                activation = F.leaky_relu((1 - mask) * bn_module.bias.data, 0.1)
+                update_activation(i, pruned_model, activation, CBL_idx)
+                bn_module.bias.data.mul_(mask)
+            activations.append(activation)
+
+        if model_def['type'] == 'shortcut':
+            actv1 = activations[i - 1]
+            from_layer = int(model_def['from'])
+            actv2 = activations[i + from_layer]
+            activation = actv1 + actv2
+            update_activation(i, pruned_model, activation, CBL_idx)
+            activations.append(activation)
+            
+
+
+        if model_def['type'] == 'route':
+            from_layers = [int(s) for s in model_def['layers'].split(',')]
+            if len(from_layers) == 1:
+                activation = activations[i + from_layers[0]]
+                update_activation(i, pruned_model, activation, CBL_idx)
+            else:
+                actv1 = activations[i + from_layers[0]]
+                actv2 = activations[from_layers[1]]
+                activation = torch.cat((actv1, actv2))
+                update_activation(i, pruned_model, activation, CBL_idx)
+            activations.append(activation)
+
+        if model_def['type'] == 'upsample':
+            activation = torch.zeros(int(model.module_defs[i - 1]['filters'])).cuda()
+            activations.append(activation)
+
+        if model_def['type'] == 'yolo':
+            activations.append(None)
+       
+    return pruned_model
