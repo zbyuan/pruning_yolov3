@@ -139,8 +139,13 @@ def train():
         cutoff = load_darknet_weights(model, weights)
         print('loaded weights from', weights)
 
-
-    _, _, prune_idx= parse_module_defs(model.module_defs)
+    if opt.prune==1:
+        print('shortcut sparse training')
+        _, _, prune_idx, shortcut_idx, _=parse_module_defs2(model.module_defs)
+        prune_idx = [idx for idx in prune_idx if idx not in shortcut_idx]
+    elif opt.prune==0:
+        print('normal sparse training ')
+        _, _, prune_idx= parse_module_defs(model.module_defs)
 
 
     if opt.transfer or opt.prebias:  # transfer learning edge (yolo) layers
@@ -167,7 +172,10 @@ def train():
     # lf = lambda x: 1 - 10 ** (hyp['lrf'] * (1 - x / epochs))  # inverse exp ramp
     # scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
     # scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=range(59, 70, 1), gamma=0.8)  # gradual fall to 0.1*lr0
-    scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[round(opt.epochs * x) for x in [0.8, 0.9]], gamma=0.1)
+    if opt.sr:
+        scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[round(opt.epochs * x) for x in [0.5, 0.6]], gamma=0.1)
+    else:
+        scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[round(opt.epochs * x) for x in [0.8, 0.9]], gamma=0.1)
     scheduler.last_epoch = start_epoch - 1
 
     # # Plot lr schedule
@@ -313,6 +321,8 @@ def train():
 
         # Update scheduler
         scheduler.step()
+        print('learning rate:',optimizer.param_groups[0]['lr'])
+
 
         # Process epoch results
         final_epoch = epoch + 1 == epochs
@@ -341,6 +351,8 @@ def train():
                       'Precision', 'Recall', 'mAP', 'F1', 'val GIoU', 'val Objectness', 'val Classification']
             for xi, title in zip(x, titles):
                 tb_writer.add_scalar(title, xi, epoch)
+            bn_weights = gather_bn_weights(model.module_list, prune_idx)
+            tb_writer.add_histogram('bn_weights/hist', bn_weights.numpy(), epoch, bins='doane')
 
         # Update best mAP
         fitness = results[2]  # mAP
@@ -373,11 +385,7 @@ def train():
                 torch.save(chkpt, wdir + 'backup%g.pt' % epoch)
 
             # Delete checkpoint
-            del chkpt
-
-        if tb_writer:
-            bn_weights = gather_bn_weights(model.module_list, prune_idx)
-            tb_writer.add_histogram('bn_weights/hist', bn_weights.numpy(), epoch, bins='doane')
+            del chkpt            
 
 
         # end epoch ----------------------------------------------------------------------------------------------------
@@ -429,6 +437,7 @@ if __name__ == '__main__':
     parser.add_argument('--sparsity-regularization', '-sr', dest='sr', action='store_true',
                         help='train with channel sparsity regularization')
     parser.add_argument('--s', type=float, default=0.001, help='scale sparse rate')
+    parser.add_argument('--prune', type=int, default=0, help='0:nomal prune 1:shortcut prune ')
     opt = parser.parse_args()
     opt.weights = last if opt.resume else opt.weights
     print(opt)
