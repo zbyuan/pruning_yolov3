@@ -25,10 +25,13 @@ python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weigh
 ## 参数设置
 
 -sr开启稀疏化，
+
 --s指定稀疏因子大小，
+
 --prune指定稀疏类型，
 
 --prune 0为正常剪枝和规整剪枝的稀疏化
+
 --prune 1为极限剪枝的稀疏化
 
 ## 进行稀疏化训练
@@ -46,7 +49,7 @@ python prune.py --cfg cfg/yolov3.cfg --data data/VHR.data --weights weights/last
 ```
 ## shortcut_prune剪枝
 ```bash
-python shortcut_prune  --cfg/yolov3.cfg --data data/VHR.data --weights weights/last.pt --percent 0.5
+python shortcut_prune.py  --cfg/yolov3.cfg --data data/VHR.data --weights weights/last.pt --percent 0.5
 ```
 ##  模型进行微调
  ```bash
