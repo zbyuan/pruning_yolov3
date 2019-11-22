@@ -35,7 +35,7 @@ python train.py --data data/VHR.data --cfg cfg/yolov3.cfg --weights/yolov3.weigh
 --prune 1为极限剪枝的稀疏化
 
 ## 进行稀疏化训练
-# baseline后  生成pt  如果你不想加载yolov3.weights进行稀疏化训练   把baseline最后的pt转化为weights  进行稀疏化
+### baseline后  生成pt  如果你不想加载yolov3.weights进行稀疏化训练   把baseline最后的pt转化为weights  进行稀疏化
 
 ```bashpython 
 python train.py --cfg cfg/yolov3.cfg --data data/VHR.data --weights weights/XX.weights --epochs 100 --batch-size 32 -sr --s 0.001  --prune 0  #scale参数默认0.001，在数据分布广类别多的或者稀疏时掉点厉害的适当调小s
